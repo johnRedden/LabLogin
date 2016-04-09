@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<!--
+  * Init Awesome *
+-->
+<head>
+    <title>FNL Lab Login</title>
+
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <!-- see http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/quick-tip-dont-forget-the-viewport-meta-tag -->
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no">
+
+    <!-- Latest compiled and minified Bootstrap CSS  (bootstrap 4 is out... in alpha) -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <!-- Latest compiled Bootstrap -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <style>
+        /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
+        @-ms-viewport { width: 100vw ; min-zoom: 100% ; zoom: 100% ; }  @viewport { width: 100vw ; min-zoom: 100% zoom: 100% ; }
+        @-ms-viewport { user-zoom: fixed ; min-zoom: 100% ; }           @viewport { user-zoom: fixed ; min-zoom: 100% ; }
+    </style>
+
+
+</head>
+
+<body>
+<div class="container">
+
+    <h1>FNL Login with Card Reader</h1>
+
+    <input id="logInput" class="form-control" placeholder="Swipe card or type." autofocus></input>
+    <br/>
+    <blockquote id="logOutput">simple echo for now</blockquote>
+
+</div>
+
+
+<script>
+    $(document).ready(function(){
+        //do stuff here using AWESOME javaScript (and jQuery)
+
+        //first create an 'on keyup' event handler for the input
+        $('#logInput').on('keyup', function(){
+            //get contents of the input box
+            var inputStr = $(this).val();
+            // TODO: string parse the input, validate and save
+            
+            // Build output string
+            var timeObj = new Date();  //this is straight javascript ( http://www.w3schools.com/jsref/jsref_obj_date.asp )
+            var getNameSomehow = 'Joe Student';
+            var outputStr = 'banner ID: ' + inputStr + '<br/>Name: ' + getNameSomehow + '<br/>Time: ' + timeObj.getTime() + ' seconds';
+            // display on web app
+            $('#logOutput').html(outputStr);
+        });
+
+
+    });
+</script>
+
+</body>
+</html>
