@@ -35,7 +35,26 @@
     <br/>
     <blockquote id="logOutput">simple echo for now</blockquote>
 
+    <!-- list group - folks in lab -->
+    <ul id="folksInLab" class="list-group">
+      <li class="list-group-item">
+
+        <div class="row">
+            <div class="col-sm-6">
+                <p>Name</p>
+            </div>
+            <div class="col-sm-3">
+                <p>In</p>
+            </div>
+            <div class="col-sm-3">
+                <p>Out</p>
+            </div>
+        </div>
+
+      </li>
+    </ul>
 </div>
+
 
 
 <script>
@@ -43,7 +62,7 @@
         //do stuff here using AWESOME javaScript (and jQuery)
 
         //first create an 'on keyup' event handler for the input
-        $('#logInput').on('keyup', function(){
+        $('#logInput').on('keyup', function(e){
             //get contents of the input box
             var inputStr = $(this).val();
             // TODO: string parse the input, validate and save
@@ -54,10 +73,42 @@
             var outputStr = 'banner ID: ' + inputStr + '<br/>Name: ' + getNameSomehow + '<br/>Time: ' + timeObj.getTime() + ' seconds';
             // display on web app
             $('#logOutput').html(outputStr);
+
+            // for list functionality (keyCode 13 is enter)
+            if(e.keyCode == 13) {
+                // trigger custom event and send extra parameters in the array
+                $(this).trigger("enterKey",[getNameSomehow, timeObj.getTime()]);
+            }
+        });
+
+        // testing fancy jquery gymnasitics
+        $('#logInput').bind("enterKey",function(e, nameIn, timeIn){
+
+            var itemStr = '<li class="list-group-item">'+
+                    '<div class="row">'+
+                    '<div class="col-sm-6"><p>'+ nameIn +'</p></div>'+
+                    '<div class="col-sm-3"><p>'+ timeIn +'</p></div>'+
+                    '<div class="col-sm-3"><p>TBA</p></div>'+
+                    '</div>'+
+                    '</li>'
+            
+            $('#folksInLab').append(itemStr);
+            $(this).val('').focus();
+
         });
 
 
+
     });
+
+
+
+
+
+
+
+
+
 </script>
 
 </body>
