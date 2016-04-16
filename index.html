@@ -17,6 +17,10 @@
     <!-- Latest compiled Bootstrap -->
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
+    <script src="filesaver.min.js"></script>
+   
+
+
     <style>
         /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
         @-ms-viewport { width: 100vw ; min-zoom: 100% ; zoom: 100% ; }  @viewport { width: 100vw ; min-zoom: 100% zoom: 100% ; }
@@ -56,6 +60,7 @@
 
       </li>
     </ul>
+    <button type="button" class="btn btn-primary" id='report'>CSV Report</button>
 </div>
 
 
@@ -66,6 +71,7 @@
 
         // Begin by clearing out local storage and start new session (need a better system for clearing)
         localStorage.clear();
+        $('#report').on('click',saveCSV);
 
         //first create an 'on keyup' event handler for the input
         $('#logInput').on('keyup', function(e){
@@ -156,6 +162,16 @@
 	}
     function removeFromLocalStorage(key) {
         localStorage.removeItem(key);
+    }
+    function saveCSV(){
+        // need to build report csv string
+        var reportStr = 'ID,Name,in,out\n'+
+                        '"00034",joe,8am,9am\n'+
+                        '"00054",bill,7am, 8am';
+        // need to make sure Blob is supported
+        var blob = new Blob([reportStr], {type: "text/csv;charset=utf-8"});
+        // saveAs is in filesaver.js
+        saveAs(blob, "report.csv");
     }
 	
 	// Detects the card and returns the id
