@@ -83,6 +83,7 @@
 
             // for list functionality (keyCode 13 is enter)
             if(e.keyCode == 13) {
+				bannerID=	detectCard(bannerID);
                 //experimenting with html5 local storage ( Key:BannerID, Value: jsonData )
                 if( getLocalStorage(bannerID) ){
                     //Not empty so labgoer is already in... do stuff to log out
@@ -143,11 +144,25 @@
     }
     function getLocalStorage(key) {
         return JSON.parse( localStorage.getItem(key) );
-    }
+	}
     function removeFromLocalStorage(key) {
         localStorage.removeItem(key);
     }
-
+	
+	// Detects the card and returns the id
+	function detectCard(id)	{
+		if(id.length< 2)
+			return id;
+		
+		switch(id[0])	{
+			case "%":
+			case "+":
+			case ";":
+				return	id.substr(1, 8);
+		}
+		
+		return id;
+	}
 
 </script>
 
