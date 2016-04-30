@@ -83,8 +83,7 @@
             // Build output string
             var timeObj = new Date();  //this is straight javascript ( http://www.w3schools.com/jsref/jsref_obj_date.asp )
 			console.log(timeObj);
-            var getNameSomehow = 'Joe Student';
-            var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + getNameSomehow + '<br/>Time: ' + getTime(timeObj.getTime());
+            var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + "???"/*getName(bannerID)*/ + '<br/>Time: ' + getTime(timeObj.getTime());
 			
 			if(isNaN(bannerID) || bannerID== "")
 			{
@@ -107,7 +106,7 @@
 						
 					}else{
 						// not in system ... do stuff to log in
-						putLocalStorage(bannerID,{'name':getNameSomehow,'in':timeObj.getTime(), 'out':'in Lab'});
+						putLocalStorage(bannerID,{'name':getName(bannerID),'in':timeObj.getTime(), 'out':'in Lab'});
 						// trigger custom event and send extra parameters in the array... just the banner id needed
 						$(this).trigger("enterKey",[bannerID, "add"]);
 
@@ -198,6 +197,22 @@
 			return "0"+num;
 		
 		return num;
+	}
+	
+	function getName(bannerID)
+	{
+		// Variables
+		var	name=	"Joe Student";
+		
+		jQuery.ajax("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, {
+			async:	false,
+			dataType:	"json",
+			success:	function(data, status, jq)	{
+				console.log(data);
+			}
+		});
+		
+		return name;
 	}
 
 </script>
