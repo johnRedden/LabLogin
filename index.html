@@ -83,7 +83,8 @@
             // Build output string
             var timeObj = new Date();  //this is straight javascript ( http://www.w3schools.com/jsref/jsref_obj_date.asp )
 			console.log(timeObj);
-            var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + "???"/*getName(bannerID)*/ + '<br/>Time: ' + getTime(timeObj.getTime());
+
+            var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + '???' + '<br/>Time: ' + getTime(timeObj.getTime());
 			
 			if(isNaN(bannerID) || bannerID== "")
 			{
@@ -106,9 +107,16 @@
 						
 					}else{
 						// not in system ... do stuff to log in
-						putLocalStorage(bannerID,{'name':getName(bannerID),'in':timeObj.getTime(), 'out':'in Lab'});
-						// trigger custom event and send extra parameters in the array... just the banner id needed
-						$(this).trigger("enterKey",[bannerID, "add"]);
+                        jQuery.get("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, function(data,status) {
+                            var nameJSON = $.parseJSON(data);
+                            var fullName = nameJSON.firstname +' '+nameJSON.lastname;
+
+                            putLocalStorage(bannerID,{'name':fullName,'in':timeObj.getTime(), 'out':'in Lab'});
+
+                            // trigger custom event and send extra parameters in the array... just the banner id needed
+                            $('#logInput').trigger("enterKey",[bannerID, "add"]);
+
+                        });
 
 					}
 
@@ -122,7 +130,7 @@
             if(task === "add"){
 
                 var labGoer = getLocalStorage(bannerID);
-
+                console.log(labGoer);
                 var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
                         '<div class="row">'+
                         '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
@@ -204,16 +212,13 @@
 		// Variables
 		var	name=	"Joe Student";
 		
-		jQuery.ajax("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, {
-			async:	false,
-			dataType:	"json",
-			crossDomain:	true,
-			contentType:	"application/json; charset=utf-8",
-			success:	function(data, status, jq)	{
-				console.log(data);
-			}
+		jQuery.get("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, function(data,status) {
+            name = $.parseJSON(data);
+		  console.log(name.firstname);
+
+
 		});
-		
+		//this is asychronous??  
 		return name;
 	}
 
