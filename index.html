@@ -207,6 +207,8 @@
 		jQuery.ajax("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, {
 			async:	false,
 			dataType:	"json",
+			crossDomain:	true,
+			contentType:	"application/json; charset=utf-8",
 			success:	function(data, status, jq)	{
 				console.log(data);
 			}
