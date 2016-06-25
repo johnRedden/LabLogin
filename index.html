@@ -97,7 +97,7 @@
 
 				// for list functionality (keyCode 13 is enter)
 				if(e.keyCode == 13) {
-					loginLogout("325241");
+					loginLogout(inputStr.val());
 					//experimenting with html5 local storage ( Key:BannerID, Value: jsonData )
 					if( getLocalStorage(bannerID) ){
 						//Not empty so labgoer is already in... do stuff to log out
