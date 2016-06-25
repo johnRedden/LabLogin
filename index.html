@@ -82,7 +82,6 @@
             
             // Build output string
             var timeObj = new Date();  //this is straight javascript ( http://www.w3schools.com/jsref/jsref_obj_date.asp )
-			console.log(timeObj);
 
             var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + '???' + '<br/>Time: ' + getTime(timeObj.getTime());
 			
@@ -215,7 +214,7 @@
 		
 		jQuery.get("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, function(data,status) {
             name = $.parseJSON(data);
-		  console.log(name.firstname);
+		  //console.log(name.firstname);
 
 
 		});
