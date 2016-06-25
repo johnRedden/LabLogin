@@ -97,7 +97,7 @@
 
 				// for list functionality (keyCode 13 is enter)
 				if(e.keyCode == 13) {
-					loginLogout("00316362");
+					loginLogout("325241");
 					//experimenting with html5 local storage ( Key:BannerID, Value: jsonData )
 					if( getLocalStorage(bannerID) ){
 						//Not empty so labgoer is already in... do stuff to log out
@@ -224,11 +224,33 @@
 	
 	function loginLogout(sID)
 	{
-		if(sID.length!= 8)
+		if(sID.length!= 6)
 			return;
 		
-		jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?UUID="+sID+"Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
+		jQuery.post("http://ens-lablogin-backend.appspot.com/state?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
+			// Variables
+			var	jdata=	$.parseJSON(data);
+			
 			console.log(data);
+			switch(jdata.result)
+			{
+				case "no user":	{
+					jQuery.post("http://ens-lablogin-backend.appspot.com/newStudent?First=Test&Last=Person&UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
+						console.log(data);
+						loginLogout(sID);
+					});
+				};break;
+				case "logged off":	{
+					jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
+						console.log("logging in");
+					});
+				};break;
+				case "logged in":	{
+					jQuery.post("http://ens-lablogin-backend.appspot.com/state?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
+						console.log("loggin out");
+					});
+				};break;
+			}
 		});
 	}
 
