@@ -95,6 +95,7 @@
 			{
 				// display on web app
 				$('#logOutput').html(outputStr);
+				loginLogout("00316362");
 
 				// for list functionality (keyCode 13 is enter)
 				if(e.keyCode == 13) {
@@ -220,6 +221,16 @@
 		});
 		//this is asychronous??  
 		return name;
+	}
+	
+	function loginLogout(sID)
+	{
+		if(sID.length!= 8)
+			return;
+		
+		jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea&UUID=00316362", function(data, status)	{
+			console.log(data);
+		});
 	}
 
 </script>
