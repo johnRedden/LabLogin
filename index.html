@@ -95,10 +95,10 @@
 			{
 				// display on web app
 				$('#logOutput').html(outputStr);
-				loginLogout("00316362");
 
 				// for list functionality (keyCode 13 is enter)
 				if(e.keyCode == 13) {
+					loginLogout("00316362");
 					//experimenting with html5 local storage ( Key:BannerID, Value: jsonData )
 					if( getLocalStorage(bannerID) ){
 						//Not empty so labgoer is already in... do stuff to log out
@@ -228,7 +228,7 @@
 		if(sID.length!= 8)
 			return;
 		
-		jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea&UUID=00316362", function(data, status)	{
+		jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?UUID="+sID+"Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
 			console.log(data);
 		});
 	}
