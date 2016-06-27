@@ -17,7 +17,7 @@
     <!-- Latest compiled Bootstrap -->
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
-    <script src="filesaver.min.js"></script>
+    <!-- <script src="filesaver.min.js"></script> -->
    
 
 
@@ -67,192 +67,16 @@
 
 <script>
     $(document).ready(function(){
-        //do stuff here using AWESOME javaScript (and jQuery)
-
         // Begin by clearing out local storage and start new session (need a better system for clearing)
         localStorage.clear();
-        $('#report').on('click',saveCSV);
+        
 
-        //first create an 'on keyup' event handler for the input
-        $('#logInput').on('keyup', function(e){
-            //get contents of the input box
-            var inputStr = $(this);
-            // TODO: string parse the input, validate and ensure it's a good banner ID
-			var bannerID = detectCard(inputStr.val());
-            
-            // Build output string
-            var timeObj = new Date();  //this is straight javascript ( http://www.w3schools.com/jsref/jsref_obj_date.asp )
 
-            var outputStr = 'banner ID: ' + bannerID + '<br/>Name: ' + '???' + '<br/>Time: ' + getTime(timeObj.getTime());
-			
-			if(isNaN(bannerID) || bannerID== "")
-			{
-				//console.log("Please rescan card");
-				inputStr.val("");
-			}
-			else
-			{
-				// display on web app
-				$('#logOutput').html(outputStr);
-
-				// for list functionality (keyCode 13 is enter)
-				if(e.keyCode == 13) {
-					loginLogout(inputStr.val());
-					//experimenting with html5 local storage ( Key:BannerID, Value: jsonData )
-					if( getLocalStorage(bannerID) ){
-						//Not empty so labgoer is already in... do stuff to log out
-						//Todo: modal to show the user total time in lab
-						//Todo: save the record somewhere
-						$(this).trigger("enterKey",[bannerID, "delete"]);
-						
-					}else{
-						// not in system ... do stuff to log in
-                        jQuery.get("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, function(data,status) {
-                            var nameJSON = $.parseJSON(data);
-                            var fullName = nameJSON.firstname +' '+nameJSON.lastname;
-
-                            putLocalStorage(bannerID,{'name':fullName,'in':timeObj.getTime(), 'out':'in Lab'});
-
-                            // trigger custom event and send extra parameters in the array... just the banner id needed
-                            $('#logInput').trigger("enterKey",[bannerID, "add"]);
-
-                        });
-
-					}
-
-				}
-			}
-        });
-
-        // testing fancy jquery gymnasitics
-        $('#logInput').bind("enterKey",function(e, bannerID, task){
-
-            if(task === "add"){
-
-                var labGoer = getLocalStorage(bannerID);
-                console.log(labGoer);
-                var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
-                        '<div class="row">'+
-                        '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
-                        '<div class="col-sm-4"><p>'+ labGoer.name +'</p></div>'+
-                        '<div class="col-sm-3"><p>'+ getTime(labGoer.in) +'</p></div>'+
-                        '<div class="col-sm-3"><p>'+ labGoer.out + '</p></div>'+
-                        '</div>'+
-                        '</li>'
-                
-                $('#folksInLab').append(itemStr);
-            }
-
-            if(task === "delete"){
-
-                //remove from local storage
-                removeFromLocalStorage(bannerID);
-                //find and remove from the UL (Maybe cory can animate the removal??)
-                $('li[id='+bannerID+']').remove();
-
-            }
-            
-            // empty the input box and give focus ready for next swipe
-            $(this).val('').focus();
-        });
 
 
 
     });
 
-    // HTML5 local storage utility functions
-    function putLocalStorage(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-    }
-    function getLocalStorage(key) {
-        return JSON.parse( localStorage.getItem(key) );
-	}
-    function removeFromLocalStorage(key) {
-        localStorage.removeItem(key);
-    }
-    function saveCSV(){
-        // need to build report csv string
-        var reportStr = 'ID,Name,in,out\n'+
-                        '"00034",joe,8am,9am\n'+
-                        '"00054",bill,7am, 8am';
-        // need to make sure Blob is supported
-        var blob = new Blob([reportStr], {type: "text/csv;charset=utf-8"});
-        // saveAs is in filesaver.js
-        saveAs(blob, "report.csv");
-    }
-	
-	// Detects the card and returns the id
-	function detectCard(id)	{
-		if(id.length< 10)
-			return id;
-		
-		if(isNaN(id))
-		{
-			return	id.substr(0, 8);
-		}
-		
-		return id;
-	}
-	
-	function getTime(time, id)	{
-		time=	new Date(time);
-		
-		return ((time.getHours()%12)+":"+leadZero(time.getMinutes())+":"+leadZero(time.getSeconds())+" "+((time.getHours()< 13) ? "am" : "pm"));
-	}
-	
-	function leadZero(num)	{
-		if(num< 10)
-			return "0"+num;
-		
-		return num;
-	}
-	
-	function getName(bannerID)
-	{
-		// Variables
-		var	name=	"Joe Student";
-		
-		jQuery.get("http://planar-effect-857.appspot.com/api/name?ID="+bannerID, function(data,status) {
-            name = $.parseJSON(data);
-		  //console.log(name.firstname);
-
-
-		});
-		//this is asychronous??  
-		return name;
-	}
-	
-	function loginLogout(sID)
-	{
-		if(sID.length!= 6)
-			return;
-		
-		jQuery.post("http://ens-lablogin-backend.appspot.com/state?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
-			// Variables
-			var	jdata=	$.parseJSON(data);
-			
-			console.log(data);
-			switch(jdata.result)
-			{
-				case "no user":	{
-					jQuery.post("http://ens-lablogin-backend.appspot.com/newStudent?First=Test&Last=Person&UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
-						console.log(data);
-						loginLogout(sID);
-					});
-				};break;
-				case "logged off":	{
-					jQuery.post("http://ens-lablogin-backend.appspot.com/loginUser?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
-						console.log("logging in");
-					});
-				};break;
-				case "logged in":	{
-					jQuery.post("http://ens-lablogin-backend.appspot.com/state?UUID="+sID+"&Domain=785efd35-42e0-44f2-6a68-60926c6ce1ea", function(data, status)	{
-						console.log("loggin out");
-					});
-				};break;
-			}
-		});
-	}
 
 </script>
 
