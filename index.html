@@ -19,8 +19,6 @@
 
     <!-- <script src="filesaver.min.js"></script> -->
    
-
-
     <style>
         /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
         @-ms-viewport { width: 100vw ; min-zoom: 100% ; zoom: 100% ; }  @viewport { width: 100vw ; min-zoom: 100% zoom: 100% ; }
@@ -64,18 +62,69 @@
 </div>
 
 
-
 <script>
     $(document).ready(function(){
-        // Begin by clearing out local storage and start new session (need a better system for clearing)
-        localStorage.clear();
-        
 
+        // 1. Need a user-domain for SETA_students (one time call only)
+        // $.post("http://ens-lablogin-backend.appspot.com/create table user", function(data, status){
+        //     console.log(data);
+        // });
+        // Result of obove one time call: 0c228bdb-eea1-44be-7080-b1682faf26a5
+        var seta_students = "0c228bdb-eea1-44be-7080-b1682faf26a5";  //somehow need to hide this.
 
+        // 2. Need a domain for the FNL lab (one time call only)
+        // $.post("http://ens-lablogin-backend.appspot.com/get new client", function(data, status){
+        //     console.log(data);
+        // });
+        //Result of obove one time call: 960fb362-35f2-4525-48dc-279795cc5bfb
+        var fnl_lab = "960fb362-35f2-4525-48dc-279795cc5bfb";  //somehow need to hide this.
 
+        // 3. Grab the cos Banner UUID from the input Box
+        var bannerID = "";
 
+        $('#logInput').on('keyup',function(e){
+            if(e.keyCode == 13){
+                bannerID = $(this).val();
+
+                //4. Need to register a sudent  (only once here)
+                var regPromise = registerLabgoer(seta_students,"Joe","Smith",bannerID);
+
+                //5. Need to login this student
+                // NOTE: there is database and internet latency here... registered student needs database propagation time.
+                // hence the use of a promise.
+                regPromise.done(function(){
+                    var logPromise = logLabgoer(fnl_lab,seta_students,bannerID);
+                    //6 Need to populate the page
+                    logPromise.done(function(){
+                        // the promise actually holds all the data
+                        console.log(logPromise.responseText);
+                        var jsonRes = $.parseJSON(logPromise.responseText);
+                        $('#logOutput').html(jsonRes.Results);
+                    });
+                })
+                
+            }
+        });
 
     });
+
+    //utility methods
+    function registerLabgoer(arg1,arg2,arg3,arg4){
+        //Needs: User-Domain, First, Last, and UUID.
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/insert into user?User-Domain='+arg1+'&First='+arg2+'&Last='+arg3+'&UUID='+arg4, function(data, status){
+            //console.log(data);
+        });
+        // returns a promise for this ajax call
+        return promise;
+    }
+    function logLabgoer(arg1,arg2,arg3){
+        //Needs: Domain, User-Domain, UUID
+        // This is some sort of toggle
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggle state from record?Domain='+arg1+'&User-Domain='+arg2+'&UUID='+arg3, function(data, status){
+            //console.log(data);
+        });
+        return promise;
+    }
 
 
 </script>
