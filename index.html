@@ -107,17 +107,18 @@
                 bannerID = $(this).val();
 				
 				// Variables
-				var	status=	getState(seta_students, fnl_lab, bannerID);
+				var	status=	getState(fnl_lab, seta_students, bannerID);
 				
 				status.done(function(data)	{
 					// Variables
 					var	jdata=	JSON.parse(data);
 					
-					console.log(data);
+					//console.log(data);
 					
 					switch(jdata.Code)	{
 						default:	console.log(data);	break;
 						case 404:	openRegisterMenu(bannerID);
+						case 0: logout();
 					}
 				});
             }
@@ -145,7 +146,7 @@
     function registerLabgoer(arg1,arg2,arg3,arg4){
         //Needs: User-Domain, First, Last, and UUID.
         var promise = $.post('http://ens-lablogin-backend.appspot.com/insert into user?User-Domain='+arg1+'&First='+arg2+'&Last='+arg3+'&UUID='+arg4, function(data, status){
-            console.log(data);
+            //console.log(data);
         });
         // returns a promise for this ajax call
         return promise;
@@ -154,7 +155,7 @@
         //Needs: Domain, User-Domain, UUID
         // This is some sort of toggle
         var promise = $.post('http://ens-lablogin-backend.appspot.com/toggle state from record?Domain='+arg1+'&User-Domain='+arg2+'&UUID='+arg3, function(data, status){
-            console.log(data);
+           // console.log(data);
         });
         return promise;
     }
@@ -187,7 +188,19 @@
 			});
 		});
 	}
-
+	function logout()	{
+		
+			// Variables
+			var	login=	logLabgoer(fnl_lab, seta_students, bannerID);
+			
+			login.done(function(data2)	{
+				// Variables
+				var	jdata2=	$.parseJSON(data2);
+				
+				$("#logOutput").html(jdata2.Results);
+			});
+		
+	}
 
 </script>
 
