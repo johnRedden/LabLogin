@@ -131,6 +131,10 @@
 		$("#regmenu #firstName").val("");
 		$("#regmenu #lastName").val("");
 		$("#regmenu").modal("show");
+		$('#regmenu').on('shown.bs.modal', function() {
+		  $("#regmenu #firstName").focus();
+		})
+		//Maybe that button should fire on click?
 	}
 	
 	function getState(domain, userDomain, uuid)	{
@@ -143,18 +147,18 @@
 	}
 
     //utility methods
-    function registerLabgoer(arg1,arg2,arg3,arg4){
+    function registerLabgoer(userDomain,firstName,lastName,uuid){
         //Needs: User-Domain, First, Last, and UUID.
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/insert into user?User-Domain='+arg1+'&First='+arg2+'&Last='+arg3+'&UUID='+arg4, function(data, status){
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/insert into user?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid, function(data, status){
             //console.log(data);
         });
         // returns a promise for this ajax call
         return promise;
     }
-    function logLabgoer(arg1,arg2,arg3){
+    function logLabgoer(domain,userDomain,uuid){
         //Needs: Domain, User-Domain, UUID
         // This is some sort of toggle
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggle state from record?Domain='+arg1+'&User-Domain='+arg2+'&UUID='+arg3, function(data, status){
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggle state from record?Domain='+domain+'&User-Domain='+userDomain+'&UUID='+uuid, function(data, status){
            // console.log(data);
         });
         return promise;
