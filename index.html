@@ -11,11 +11,11 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no">
 
     <!-- Latest compiled and minified Bootstrap CSS  (bootstrap 4 is out... in alpha) -->
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <!-- jQuery library -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <!-- Latest compiled Bootstrap -->
-    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
     <!-- <script src="filesaver.min.js"></script> -->
    
@@ -100,7 +100,9 @@
 	
     $(document).ready(function(){
 
-        
+        getRecords(fnl_lab).done(function(data)	{
+			console.log(data);
+		});
 
         $('#logInput').on('keyup',function(e){
             if(e.keyCode == 13){
@@ -193,17 +195,47 @@
 		});
 	}
 	function logout()	{
+		// Variables
+		var	login=	logLabgoer(fnl_lab, seta_students, bannerID);
 		
+		login.done(function(data2)	{
 			// Variables
-			var	login=	logLabgoer(fnl_lab, seta_students, bannerID);
+			var	jdata2=	$.parseJSON(data2);
 			
-			login.done(function(data2)	{
-				// Variables
-				var	jdata2=	$.parseJSON(data2);
-				
-				$("#logOutput").html(jdata2.Results);
-			});
+			//console.log(jdata2);
+			$("#logOutput").html(jdata2.Results);
+			if(jdata2.Results== "User is Logged In")
+				addPerson(bannerID);
+			else
+				deletePerson(bannerID);
+		});
+	}
+	
+	function getRecords(domain)	{
+		// Variables
+		var	records=	$.post("http://ens-lablogin-backend.appspot.com/select all from record?Domain="+domain, function(data, status)	{
+			//console.log(data);
+		});
 		
+		return records
+	}
+	
+	function addPerson(bannerID)	{
+		// Variables
+		var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
+                        '<div class="row">'+
+                        '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
+                        //'<div class="col-sm-4"><p>'+ labGoer.name +'</p></div>'+
+                        //'<div class="col-sm-3"><p>'+ getTime(labGoer.in) +'</p></div>'+
+                        //'<div class="col-sm-3"><p>'+ labGoer.out + '</p></div>'+
+                        '</div>'+
+                        '</li>';
+		
+		$('#folksInLab').append(itemStr);
+	}
+	
+	function deletePerson(bannerID)	{
+		$("li[id="+bannerID+"]").remove();
 	}
 
 </script>
