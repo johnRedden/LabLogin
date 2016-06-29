@@ -23,6 +23,7 @@
         /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
         @-ms-viewport { width: 100vw ; min-zoom: 100% ; zoom: 100% ; }  @viewport { width: 100vw ; min-zoom: 100% zoom: 100% ; }
         @-ms-viewport { user-zoom: fixed ; min-zoom: 100% ; }           @viewport { user-zoom: fixed ; min-zoom: 100% ; }
+
     </style>
 
 
@@ -30,9 +31,16 @@
 
 <body>
 <div class="container">
-
-    <h1>FNL Login with Card Reader</h1>
-
+	
+  	<div class="row">
+	    <div class="col-sm-4">
+	      	<img class="img-responsive" src="assets/AirHockeyWatermark.png"  alt="Awesomesauce">
+	    </div>
+	    <div class="col-sm-8">
+	      <h2>FNL Login System</h2>
+	    </div>
+	</div>
+			
     <input id="logInput" class="form-control" placeholder="Swipe card or type." autofocus></input>
     <br/>
     <blockquote id="logOutput">simple echo for now</blockquote>
