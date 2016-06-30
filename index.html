@@ -122,7 +122,12 @@
 				var	jdata=	$.parseJSON(data);
 				
 				if(jdata.Status== "Success")
+				{
 					saveCSV(jdata.Results);
+					destroyOldData(fnl_lab);
+					//recoverLogins(jdata.Results); Timestamps get warped. Cannot do this unless backend supports giving specific timestamps.
+					location.reload();
+				}
 			});
 		});
 
@@ -308,6 +313,12 @@
 		});
 		
 		saveAs(blob, "report.csv");
+	}
+	
+	function destroyOldData(domain)	{
+		$.post("http://ens-lablogin-backend.appspot.com/drop table record?Domain="+domain, function(data, status)	{
+			console.log(data);
+		});
 	}
 
 </script>
