@@ -17,7 +17,7 @@
     <!-- Latest compiled Bootstrap -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
-    <!-- <script src="filesaver.min.js"></script> -->
+    <script src="filesaver.min.js"></script>
    
     <style>
         /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
@@ -109,7 +109,21 @@
     $(document).ready(function(){
 
         getRecords(fnl_lab).done(function(data)	{
-			console.log(data);
+			// Variables
+			var	jdata=	$.parseJSON(data);
+			
+			if(jdata.Status== "Success")
+				parsePastData(jdata.Results);
+		});
+		
+        $('#report').on('click', function(args)	{
+			getRecords(fnl_lab).done(function(data)	{
+				// Variables
+				var	jdata=	$.parseJSON(data);
+				
+				if(jdata.Status== "Success")
+					saveCSV(jdata.Results);
+			});
 		});
 
         $('#logInput').on('keyup',function(e){
@@ -131,6 +145,7 @@
 						case 0: logout();
 					}
 				});
+				$(this).val("");
             }
         });
 
@@ -228,22 +243,71 @@
 		return records
 	}
 	
-	function addPerson(bannerID)	{
+	function addPerson(bannerID, time)	{
 		// Variables
 		var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
                         '<div class="row">'+
                         '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
-                        //'<div class="col-sm-4"><p>'+ labGoer.name +'</p></div>'+
-                        //'<div class="col-sm-3"><p>'+ getTime(labGoer.in) +'</p></div>'+
-                        //'<div class="col-sm-3"><p>'+ labGoer.out + '</p></div>'+
+                        '<div class="col-sm-4"><p>'+ ""/*labGoer.name*/ +'</p></div>'+
+                        '<div class="col-sm-3"><p>'+ getTime(((time== null) ? new Date() : time)) +'</p></div>'+
+                        '<div class="col-sm-3"><p>'+ ""/*labGoer.out*/ + '</p></div>'+
                         '</div>'+
                         '</li>';
 		
 		$('#folksInLab').append(itemStr);
 	}
 	
+	function getTime(time, id)	{
+		time=	new Date(time);
+		
+		if(time.getHours()%12== 0)
+			return ("12:"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
+		else
+			return ((time.getHours()%12)+":"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
+	}
+	function leadZero(num)	{
+		if(num< 10)
+			return "0"+num;
+		
+		return num;
+	}
+	
+	function isTimeZero(time)	{
+		return (time.toString()== "0001-01-01T00:00:00Z");
+	}
+	
 	function deletePerson(bannerID)	{
 		$("li[id="+bannerID+"]").remove();
+	}
+	
+	function parsePastData(data)	{
+		for(var i= 0; i< data.length; i++)
+		{
+			if(isTimeZero(data[i].Out))
+			{
+				addPerson(data[i].UUID, data[i].In);
+			}
+		}
+	}
+	
+	function saveCSV(data)	{
+		// Variables
+		var	str=	"ID,Name,In,Out\n";
+		var	blob;
+		
+		for(var i= 0; i< data.length; i++)
+		{
+			if(isTimeZero(data[i].Out))
+				str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+",Still Logged In\n";
+			else
+				str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+","+getTime(data[i].Out)+"\n";
+		}
+		
+		blob=	new Blob([str], {
+			type:	"text/csv;charset=utf-8"
+		});
+		
+		saveAs(blob, "report.csv");
 	}
 
 </script>
