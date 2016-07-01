@@ -16,6 +16,9 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <!-- Latest compiled Bootstrap -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- Font Awesome I guess -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
+
 
     <script src="filesaver.min.js"></script>
    
@@ -23,7 +26,12 @@
         /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html and http://dev.w3.org/csswg/css-device-adapt/ */
         @-ms-viewport { width: 100vw ; min-zoom: 100% ; zoom: 100% ; }  @viewport { width: 100vw ; min-zoom: 100% zoom: 100% ; }
         @-ms-viewport { user-zoom: fixed ; min-zoom: 100% ; }           @viewport { user-zoom: fixed ; min-zoom: 100% ; }
-
+        .fa-check-circle{
+        	color:green;
+        }
+        .fa-times-circle{
+        	color:crimson;
+        }
     </style>
 
 
@@ -40,28 +48,52 @@
 	      <h2>FNL Login System</h2>
 	    </div>
 	</div>
-			
-    <input id="logInput" class="form-control" placeholder="Swipe card or type." autofocus></input>
+	<div class="input-group">
+		<span id="logIndicator" class="input-group-addon"><i class="fa fa-times-circle" aria-hidden="true"></i></span>		
+	    <input id="logInput" class="form-control" placeholder="Swipe card or type." autofocus></input>
+    </div>
     <br/>
     <blockquote id="logOutput">simple echo for now</blockquote>
 	
+	<!-- Registration Modal -->
 	<div id="regmenu" class="modal fade" role="dialog">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h2>Sign up for <span id="specific-domain">FNL</span> Login</h2>
+					<!-- register for user group whis is SETA -->
+					<h2>Register: <span id="specific-userDomain">SETA</span> Login System</h2>
 				</div>
 				<div class="modal-body">
-					Banner ID: <input type="text" id="bannerID" /><br/><br/>
-					First Name: <input type="text" id="firstName" />
-					Last Name: <input type="text" id="lastName" />
+					Banner ID: <input class="form-control" id="bannerID" readonly />
+					First Name: <input class="form-control" id="firstName" placeholder="First Name" />
+					Last Name: <input class="form-control" id="lastName" placeholder="Last Name" />
+					*Email: <input class="form-control" id="email" placeholder="Email" />
 				</div>
 				<div class="modal-footer">
 					<span class="btn btn-primary" onclick="verifyRegistration();">Submit</span>
+					<button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
 	</div>
+	<!-- Good Bye Modal -->
+	<div id="goodBye" class="modal fade" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Thank You!</h2>
+				</div>
+				<div class="modal-body">
+					Logged Out: <span id="outID"></span><br/><br/>
+					Time in Lab: <span id="outTime"></span><br/><br/>
+				</div>
+				<div class="modal-footer">
+					<button id="outBtn" type="button" class="btn btn-success" data-dismiss="modal">Dismiss</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 
     <!-- list group - folks in lab -->
     <ul id="folksInLab" class="list-group">
@@ -85,7 +117,9 @@
       </li>
     </ul>
     <button type="button" class="btn btn-primary" id='report'>CSV Report</button>
+    <button type="button" class="btn btn-danger" data-dismiss="modal">Delete Records</button>
 </div>
+
 
 
 <script>
@@ -132,8 +166,14 @@
 		});
 
         $('#logInput').on('keyup',function(e){
+        	bannerID = $(this).val();
+        	if(bannerID.length=== 8)
+        		$("#logIndicator").find('i').toggleClass('fa-times-circle fa-check-circle');
+        	else
+        		$("#logIndicator").find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
+
             if(e.keyCode == 13){
-                bannerID = $(this).val();
+                //bannerID = $(this).val();
 				
 				// Variables
 				var	status=	getState(fnl_lab, seta_students, bannerID);
@@ -146,8 +186,8 @@
 					
 					switch(jdata.Code)	{
 						default:	console.log(data);	break;
-						case 404:	openRegisterMenu(bannerID);
-						case 0: logout();
+						case 404:	openRegisterMenu(bannerID); break;
+						case 0: logout(); break;
 					}
 				});
 				$(this).val("");
@@ -163,6 +203,9 @@
 		$("#regmenu").modal("show");
 		$('#regmenu').on('shown.bs.modal', function() {
 		  $("#regmenu #firstName").focus();
+		})
+		$('#regmenu').on('hidden.bs.modal', function() {
+		   $('#logInput').focus();
 		})
 		//Maybe that button should fire on click?
 	}
@@ -204,7 +247,7 @@
 		if(bannerID== "" || firstName== "" || lastName== "" || bannerID.length!= 8)
 			return false;
 		
-		$("#regmenu").modal("hide");
+		//$("#regmenu").modal("hide");
 		registerAndLogin(registerLabgoer(seta_students, firstName, lastName, bannerID));
 		
 	}
@@ -219,6 +262,8 @@
 				var	jdata2=	$.parseJSON(data2);
 				
 				$("#logOutput").html(jdata2.Results);
+				$("#regmenu").modal("hide");
+				location.reload();
 			});
 		});
 	}
@@ -234,8 +279,11 @@
 			$("#logOutput").html(jdata2.Results);
 			if(jdata2.Results== "User is Logged In")
 				addPerson(bannerID);
-			else
+			else{
+				$("#outID").html(bannerID);
+				$("#goodBye").modal("show");
 				deletePerson(bannerID);
+			}
 		});
 	}
 	
