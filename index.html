@@ -106,12 +106,13 @@
             <div class="col-sm-4">
                 <p>Name</p>
             </div>
-            <div class="col-sm-3">
+			<div class="col-sm-4">
+                <p>Email</p>
+            </div>
+            <div class="col-sm-2">
                 <p>In</p>
             </div>
-            <div class="col-sm-3">
-                <p>Out</p>
-            </div>
+
         </div>
 
       </li>
@@ -148,10 +149,11 @@
 			$.each(jdata.Results, function(index,record){
 				//sorted on time in... so must be here
 				addPerson(record.UUID, record.In);
-				//need to get the names given the UUID and then update table
+				//need to get the names given the UUID and then update table to save order
 				$.post("http://ens-lablogin-backend.appspot.com/getInfoFromUser?User-Domain="+seta_students+"&UUID="+record.UUID, function(data2, status2){
-					var	userInfo=	$.parseJSON(data2);
-					console.log(userInfo.Results);
+					var	userInfo=	$.parseJSON(data2);;
+					$('#nameFor'+record.UUID).html(userInfo.Results.First+' '+userInfo.Results.Last);
+					$('#emailFor'+record.UUID).html(userInfo.Results.Email);
 					//add extra info to specific record
 				});
 			});
@@ -169,7 +171,6 @@
 				
 				status.done(function(data)	{
 					var	jdata=	JSON.parse(data);	
-					console.log(jdata)	
 					switch(jdata.Code)	{
 						default:	console.log(data);	break;
 						case 404:	openRegisterMenu(bannerID); break; 
@@ -194,8 +195,6 @@
 				}
 			});
 		});
-
-
 
     });
 	
@@ -240,7 +239,7 @@
     function registerLabgoer(userDomain,firstName,lastName,email,uuid){
         //Needs: User-Domain, First, Last, and UUID.
         var promise = $.post('http://ens-lablogin-backend.appspot.com/addUser?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid+'&Email='+email, function(data, status){
-            console.log(data);
+            //console.log(data);
         });
         // returns a promise for this ajax call
         return promise;
@@ -274,15 +273,17 @@
 		var	logout=	logLabgoer(fnl_lab, seta_students, bannerID);	
 		logout.done(function(data)	{
 			var	jdata=	$.parseJSON(data);
-			console.log(jdata);
-			if(jdata.Results.Status== "User is Logged In")
+			
+			if(jdata.Results.Status== "User is Logged In"){
 				addPerson(bannerID);
-			else{
+				// next populate the name and email
+				$('#nameFor'+bannerID).html(jdata.Results.First+' '+jdata.Results.Last);
+				$('#emailFor'+bannerID).html(jdata.Results.Email);
+			}else{
 				$("#outID").html(bannerID);
 				$("#goodBye").modal("show");
 				deletePerson(bannerID);
 			}
-			//location.reload();
 		});
 	}
 	
@@ -300,9 +301,9 @@
 		var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
                         '<div class="row">'+
                         '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
-                        '<div class="col-sm-4"><p>'+ ""/*labGoer.name*/ +'</p></div>'+
-                        '<div class="col-sm-3"><p>'+ getTime(((time== null) ? new Date() : time)) +'</p></div>'+
-                        '<div class="col-sm-3"><p>'+ ""/*labGoer.out*/ + '</p></div>'+
+                        '<div class="col-sm-4"><p id=nameFor'+bannerID+'>'+ ""/*labGoer.name*/ +'</p></div>'+
+						'<div class="col-sm-4"><p id=emailFor'+bannerID+'>'+ ""/*email*/ + '</p></div>'+
+                        '<div class="col-sm-2"><p>'+ getTime(((time== null) ? new Date() : time)) +'</p></div>'+
                         '</div>'+
                         '</li>';
 		
@@ -365,7 +366,7 @@
 	
 	function destroyOldData(domain)	{
 		$.post("http://ens-lablogin-backend.appspot.com/drop table record?Domain="+domain, function(data, status)	{
-			console.log(data);
+			//console.log(data);
 		});
 	}
 
