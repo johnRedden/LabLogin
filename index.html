@@ -142,14 +142,44 @@
 	
     $(document).ready(function(){
 
-        getRecords(fnl_lab).done(function(data)	{
-			// Variables
+		//get currently logged in students and populate table
+		$.post("http://ens-lablogin-backend.appspot.com/getCurrentRecords?Domain="+fnl_lab, function(data, status)	{
 			var	jdata=	$.parseJSON(data);
-			
-			if(jdata.Status== "Success")
-				parsePastData(jdata.Results);
+			$.each(jdata.Results, function(index,record){
+				//sorted on time in... so must be here
+				addPerson(record.UUID, record.In);
+				//need to get the names given the UUID and then update table
+				$.post("http://ens-lablogin-backend.appspot.com/getInfoFromUser?User-Domain="+seta_students+"&UUID="+record.UUID, function(data2, status2){
+					var	userInfo=	$.parseJSON(data2);
+					console.log(userInfo.Results);
+					//add extra info to specific record
+				});
+			});
 		});
-		
+		//Listen for enter in the input box
+        $('#logInput').on('keyup',function(e){
+        	bannerID = $(this).val();
+        	if(bannerID.length=== 8)
+        		$("#logIndicator").find('i').toggleClass('fa-times-circle fa-check-circle');
+        	else
+        		$("#logIndicator").find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
+
+            if(e.keyCode == 13){
+				var	status=	checkLoginStatus(fnl_lab, seta_students, bannerID);
+				
+				status.done(function(data)	{
+					var	jdata=	JSON.parse(data);	
+					console.log(jdata)	
+					switch(jdata.Code)	{
+						default:	console.log(data);	break;
+						case 404:	openRegisterMenu(bannerID); break; 
+						case 0: 	logStudent(); break;
+					}
+				});
+				$(this).val("");
+            }
+        });
+		// reporting listener
         $('#report').on('click', function(args)	{
 			getRecords(fnl_lab).done(function(data)	{
 				// Variables
@@ -165,34 +195,7 @@
 			});
 		});
 
-        $('#logInput').on('keyup',function(e){
-        	bannerID = $(this).val();
-        	if(bannerID.length=== 8)
-        		$("#logIndicator").find('i').toggleClass('fa-times-circle fa-check-circle');
-        	else
-        		$("#logIndicator").find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
 
-            if(e.keyCode == 13){
-                //bannerID = $(this).val();
-				
-				// Variables
-				var	status=	getState(fnl_lab, seta_students, bannerID);
-				
-				status.done(function(data)	{
-					// Variables
-					var	jdata=	JSON.parse(data);
-					
-					//console.log(data);
-					
-					switch(jdata.Code)	{
-						default:	console.log(data);	break;
-						case 404:	openRegisterMenu(bannerID); break;
-						case 0: logout(); break;
-					}
-				});
-				$(this).val("");
-            }
-        });
 
     });
 	
@@ -208,11 +211,25 @@
 		   $('#logInput').focus();
 		})
 		//Maybe that button should fire on click?
+		//submit button will call verifyRegistration();
+	}
+	function verifyRegistration()	{
+		var	bannerID=	$("#bannerID").val();
+		var	firstName=	$("#firstName").val();
+		var	lastName=	$("#lastName").val();
+		var	email=		$("#email").val();
+		var	register;
+		
+		if(bannerID== "" || firstName== "" || lastName== "" || bannerID.length!= 8)
+			return false;
+		
+		registerAndLogin(registerLabgoer(seta_students, firstName, lastName, email, bannerID));
+		
 	}
 	
-	function getState(domain, userDomain, uuid)	{
+	function checkLoginStatus(domain, userDomain, uuid)	{
 		// Variables
-		var	promise=	$.post("http://ens-lablogin-backend.appspot.com/select state from record?Domain="+domain+"&User-Domain="+userDomain+"&UUID="+uuid, function(data, status)	{
+		var	promise=	$.post("http://ens-lablogin-backend.appspot.com/checkLogin?Domain="+domain+"&User-Domain="+userDomain+"&UUID="+uuid, function(data, status)	{
 			//console.log(data);
 		});
 		
@@ -220,10 +237,10 @@
 	}
 
     //utility methods
-    function registerLabgoer(userDomain,firstName,lastName,uuid){
+    function registerLabgoer(userDomain,firstName,lastName,email,uuid){
         //Needs: User-Domain, First, Last, and UUID.
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/insert into user?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid, function(data, status){
-            //console.log(data);
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/addUser?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid+'&Email='+email, function(data, status){
+            console.log(data);
         });
         // returns a promise for this ajax call
         return promise;
@@ -231,26 +248,11 @@
     function logLabgoer(domain,userDomain,uuid){
         //Needs: Domain, User-Domain, UUID
         // This is some sort of toggle
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggle state from record?Domain='+domain+'&User-Domain='+userDomain+'&UUID='+uuid, function(data, status){
+        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggleLogin?Domain='+domain+'&User-Domain='+userDomain+'&UUID='+uuid, function(data, status){
            // console.log(data);
         });
         return promise;
     }
-	
-	function verifyRegistration()	{
-		// Variables
-		var	bannerID=	$("#bannerID").val();
-		var	firstName=	$("#firstName").val();
-		var	lastName=	$("#lastName").val();
-		var	register;
-		
-		if(bannerID== "" || firstName== "" || lastName== "" || bannerID.length!= 8)
-			return false;
-		
-		//$("#regmenu").modal("hide");
-		registerAndLogin(registerLabgoer(seta_students, firstName, lastName, bannerID));
-		
-	}
 	
 	function registerAndLogin(registerPromise)	{
 		registerPromise.done(function(data)	{
@@ -267,23 +269,20 @@
 			});
 		});
 	}
-	function logout()	{
-		// Variables
-		var	login=	logLabgoer(fnl_lab, seta_students, bannerID);
-		
-		login.done(function(data2)	{
-			// Variables
-			var	jdata2=	$.parseJSON(data2);
-			
-			//console.log(jdata2);
-			$("#logOutput").html(jdata2.Results);
-			if(jdata2.Results== "User is Logged In")
+	function logStudent()	{
+		// logLabgoer is a toggle
+		var	logout=	logLabgoer(fnl_lab, seta_students, bannerID);	
+		logout.done(function(data)	{
+			var	jdata=	$.parseJSON(data);
+			console.log(jdata);
+			if(jdata.Results.Status== "User is Logged In")
 				addPerson(bannerID);
 			else{
 				$("#outID").html(bannerID);
 				$("#goodBye").modal("show");
 				deletePerson(bannerID);
 			}
+			//location.reload();
 		});
 	}
 	
@@ -309,7 +308,10 @@
 		
 		$('#folksInLab').append(itemStr);
 	}
-	
+	function deletePerson(bannerID)	{
+		$("li[id="+bannerID+"]").remove();
+	}
+
 	function getTime(time, id)	{
 		time=	new Date(time);
 		
@@ -329,19 +331,17 @@
 		return (time.toString()== "0001-01-01T00:00:00Z");
 	}
 	
-	function deletePerson(bannerID)	{
-		$("li[id="+bannerID+"]").remove();
-	}
+
 	
-	function parsePastData(data)	{
-		for(var i= 0; i< data.length; i++)
-		{
-			if(isTimeZero(data[i].Out))
-			{
-				addPerson(data[i].UUID, data[i].In);
-			}
-		}
-	}
+	// function parsePastData(data)	{
+	// 	for(var i= 0; i< data.length; i++)
+	// 	{
+	// 		if(isTimeZero(data[i].Out))
+	// 		{
+	// 			addPerson(data[i].UUID, data[i].In);
+	// 		}
+	// 	}
+	// }
 	
 	function saveCSV(data)	{
 		// Variables
