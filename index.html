@@ -70,7 +70,7 @@
 					*Email: <input class="form-control" id="email" placeholder="Email" />
 				</div>
 				<div class="modal-footer">
-					<span class="btn btn-primary" onclick="verifyRegistration();">Submit</span>
+					<span class="btn btn-primary" id="submitRegistration">Submit</span>
 					<button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
 				</div>
 			</div>
@@ -124,252 +124,280 @@
 
 
 <script>
-	// 1. Need a user-domain for SETA_students (one time call only)
-	// $.post("http://ens-lablogin-backend.appspot.com/create table user", function(data, status){
-	//     console.log(data);
-	// });
-	// Result of obove one time call: 0c228bdb-eea1-44be-7080-b1682faf26a5
-	var seta_students = "0c228bdb-eea1-44be-7080-b1682faf26a5";  //somehow need to hide this.
+// [EDITED]: Decoupled javascript from HTML, enclosing it will sanitize the namespace
+(function(){
+		// ===============================================================================================
+		// Begin Module: Globals
+		// ===============================================================================================	
+		// 1. Need a user-domain for SETA_students (one time call only)
+		// $.post("http://ens-lablogin-backend.appspot.com/create table user", function(data, status){
+		//     console.log(data);
+		// });
+		// Result of obove one time call: 0c228bdb-eea1-44be-7080-b1682faf26a5
+		var seta_students = "0c228bdb-eea1-44be-7080-b1682faf26a5";  //somehow need to hide this.
 
-	// 2. Need a domain for the FNL lab (one time call only)
-	// $.post("http://ens-lablogin-backend.appspot.com/get new client", function(data, status){
-	//     console.log(data);
-	// });
-	//Result of obove one time call: 960fb362-35f2-4525-48dc-279795cc5bfb
-	var fnl_lab = "960fb362-35f2-4525-48dc-279795cc5bfb";  //somehow need to hide this.
+		// 2. Need a domain for the FNL lab (one time call only)
+		// $.post("http://ens-lablogin-backend.appspot.com/get new client", function(data, status){
+		//     console.log(data);
+		// });
+		//Result of obove one time call: 960fb362-35f2-4525-48dc-279795cc5bfb
+		var fnl_lab = "960fb362-35f2-4525-48dc-279795cc5bfb";  //somehow need to hide this.
 
-	// 3. Grab the cos Banner UUID from the input Box
-	var bannerID = "";
-	
-    $(document).ready(function(){
-
-		//get currently logged in students and populate table
-		$.post("http://ens-lablogin-backend.appspot.com/getCurrentRecords?Domain="+fnl_lab, function(data, status)	{
-			var	jdata=	$.parseJSON(data);
-			$.each(jdata.Results, function(index,record){
-				//sorted on time in... so must be here
-				addPerson(record.UUID, record.In);
-				//need to get the names given the UUID and then update table to save order
-				$.post("http://ens-lablogin-backend.appspot.com/getInfoFromUser?User-Domain="+seta_students+"&UUID="+record.UUID, function(data2, status2){
-					var	userInfo=	$.parseJSON(data2);;
-					$('#nameFor'+record.UUID).html(userInfo.Results.First+' '+userInfo.Results.Last);
-					$('#emailFor'+record.UUID).html(userInfo.Results.Email);
-					//add extra info to specific record
-				});
-			});
-		});
-		//Listen for enter in the input box
-        $('#logInput').on('keyup',function(e){
-        	bannerID = $(this).val();
-        	if(bannerID.length=== 8)
-        		$("#logIndicator").find('i').toggleClass('fa-times-circle fa-check-circle');
-        	else
-        		$("#logIndicator").find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
-
-            if(e.keyCode == 13){
-				var	status=	checkLoginStatus(fnl_lab, seta_students, bannerID);
-				
-				status.done(function(data)	{
-					var	jdata=	JSON.parse(data);	
-					switch(jdata.Code)	{
-						default:	console.log(data);	break;
-						case 404:	openRegisterMenu(bannerID); break; 
-						case 0: 	logStudent(); break;
-					}
-				});
-				$(this).val("");
-            }
-        });
-		// reporting listener
-        $('#report').on('click', function(args)	{
-			getRecords(fnl_lab).done(function(data)	{
-				// Variables
-				var	jdata=	$.parseJSON(data);
-				
-				if(jdata.Status== "Success")
-				{
-					saveCSV(jdata.Results);
-					destroyOldData(fnl_lab);
-					//recoverLogins(jdata.Results); Timestamps get warped. Cannot do this unless backend supports giving specific timestamps.
-					location.reload();
-				}
-			});
-		});
-
-    });
-	
-	function openRegisterMenu(bannerID)	{
-		$("#regmenu #bannerID").val(bannerID);
-		$("#regmenu #firstName").val("");
-		$("#regmenu #lastName").val("");
-		$("#regmenu").modal("show");
-		$('#regmenu').on('shown.bs.modal', function() {
-		  $("#regmenu #firstName").focus();
-		})
-		$('#regmenu').on('hidden.bs.modal', function() {
-		   $('#logInput').focus();
-		})
-		//Maybe that button should fire on click?
-		//submit button will call verifyRegistration();
-	}
-	function verifyRegistration()	{
-		var	bannerID=	$("#bannerID").val();
-		var	firstName=	$("#firstName").val();
-		var	lastName=	$("#lastName").val();
-		var	email=		$("#email").val();
-		var	register;
+		// 3. Grab the cos Banner UUID from the input Box
+		var bannerID = "";
 		
-		if(bannerID== "" || firstName== "" || lastName== "" || bannerID.length!= 8)
-			return false;
-		
-		registerAndLogin(registerLabgoer(seta_students, firstName, lastName, email, bannerID));
-		
-	}
-	
-	function checkLoginStatus(domain, userDomain, uuid)	{
-		// Variables
-		var	promise=	$.post("http://ens-lablogin-backend.appspot.com/checkLogin?Domain="+domain+"&User-Domain="+userDomain+"&UUID="+uuid, function(data, status)	{
-			//console.log(data);
-		});
-		
-		return promise;
-	}
-
-    //utility methods
-    function registerLabgoer(userDomain,firstName,lastName,email,uuid){
-        //Needs: User-Domain, First, Last, and UUID.
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/addUser?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid+'&Email='+email, function(data, status){
-            //console.log(data);
-        });
-        // returns a promise for this ajax call
-        return promise;
-    }
-    function logLabgoer(domain,userDomain,uuid){
-        //Needs: Domain, User-Domain, UUID
-        // This is some sort of toggle
-        var promise = $.post('http://ens-lablogin-backend.appspot.com/toggleLogin?Domain='+domain+'&User-Domain='+userDomain+'&UUID='+uuid, function(data, status){
-           // console.log(data);
-        });
-        return promise;
-    }
-	
-	function registerAndLogin(registerPromise)	{
-		registerPromise.done(function(data)	{
+		// [EDITED]: Reused functions are moved into this module.
+		// ===============================================================================================
+		// Begin Module: Helper Functions
+		// ===============================================================================================	
+		function addPerson(bannerID, time)	{
 			// Variables
-			var	login=	logLabgoer(fnl_lab, seta_students, bannerID);
+			var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
+							'<div class="row">'+
+							'<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
+							'<div class="col-sm-4"><p id=nameFor'+bannerID+'>'+ ""/*labGoer.name*/ +'</p></div>'+
+							'<div class="col-sm-4"><p id=emailFor'+bannerID+'>'+ ""/*email*/ + '</p></div>'+
+							'<div class="col-sm-2"><p>'+ getTime(((time== null) ? new Date() : time)) +'</p></div>'+
+							'</div>'+
+							'</li>';
 			
-			login.done(function(data2)	{
-				// Variables
-				var	jdata2=	$.parseJSON(data2);
-				
-				$("#logOutput").html(jdata2.Results);
-				$("#regmenu").modal("hide");
-				location.reload();
-			});
-		});
-	}
-	function logStudent()	{
-		// logLabgoer is a toggle
-		var	logout=	logLabgoer(fnl_lab, seta_students, bannerID);	
-		logout.done(function(data)	{
-			var	jdata=	$.parseJSON(data);
-			
-			if(jdata.Results.Status== "User is Logged In"){
-				addPerson(bannerID);
-				// next populate the name and email
-				$('#nameFor'+bannerID).html(jdata.Results.First+' '+jdata.Results.Last);
-				$('#emailFor'+bannerID).html(jdata.Results.Email);
-			}else{
-				$("#outID").html(bannerID);
-				$("#goodBye").modal("show");
-				deletePerson(bannerID);
-			}
-		});
-	}
-	
-	function getRecords(domain)	{
-		// Variables
-		var	records=	$.post("http://ens-lablogin-backend.appspot.com/select all from record?Domain="+domain, function(data, status)	{
-			//console.log(data);
-		});
-		
-		return records
-	}
-	
-	function addPerson(bannerID, time)	{
-		// Variables
-		var itemStr = '<li class="list-group-item" id='+bannerID+'>'+
-                        '<div class="row">'+
-                        '<div class="col-sm-2"><p>'+ bannerID +'</p></div>'+
-                        '<div class="col-sm-4"><p id=nameFor'+bannerID+'>'+ ""/*labGoer.name*/ +'</p></div>'+
-						'<div class="col-sm-4"><p id=emailFor'+bannerID+'>'+ ""/*email*/ + '</p></div>'+
-                        '<div class="col-sm-2"><p>'+ getTime(((time== null) ? new Date() : time)) +'</p></div>'+
-                        '</div>'+
-                        '</li>';
-		
-		$('#folksInLab').append(itemStr);
-	}
-	function deletePerson(bannerID)	{
-		$("li[id="+bannerID+"]").remove();
-	}
-
-	function getTime(time, id)	{
-		time=	new Date(time);
-		
-		if(time.getHours()%12== 0)
-			return ("12:"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
-		else
-			return ((time.getHours()%12)+":"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
-	}
-	function leadZero(num)	{
-		if(num< 10)
-			return "0"+num;
-		
-		return num;
-	}
-	
-	function isTimeZero(time)	{
-		return (time.toString()== "0001-01-01T00:00:00Z");
-	}
-	
-
-	
-	// function parsePastData(data)	{
-	// 	for(var i= 0; i< data.length; i++)
-	// 	{
-	// 		if(isTimeZero(data[i].Out))
-	// 		{
-	// 			addPerson(data[i].UUID, data[i].In);
-	// 		}
-	// 	}
-	// }
-	
-	function saveCSV(data)	{
-		// Variables
-		var	str=	"ID,Name,In,Out\n";
-		var	blob;
-		
-		for(var i= 0; i< data.length; i++)
-		{
-			if(isTimeZero(data[i].Out))
-				str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+",Still Logged In\n";
-			else
-				str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+","+getTime(data[i].Out)+"\n";
+			$('#folksInLab').append(itemStr);
 		}
 		
-		blob=	new Blob([str], {
-			type:	"text/csv;charset=utf-8"
+		function deletePerson(bannerID)	{
+			$("li[id="+bannerID+"]").remove();
+		}	
+		
+		function logLabgoer(domain,userDomain,uuid){
+			//Needs: Domain, User-Domain, UUID
+			// This is some sort of toggle
+			var promise = $.post('http://ens-lablogin-backend.appspot.com/toggleLogin?Domain='+domain+'&User-Domain='+userDomain+'&UUID='+uuid, function(data, status){
+			   // console.log(data);
+			});
+			return promise;
+		}	
+		
+		// ===============================================================================================
+		// Begin Module: Main
+		// ===============================================================================================
+		$(document).ready(function(){
+
+			//get currently logged in students and populate table
+			$.post("http://ens-lablogin-backend.appspot.com/getCurrentRecords?Domain="+fnl_lab, function(data, status)	{
+				var	jdata=	$.parseJSON(data);
+				$.each(jdata.Results, function(index,record){
+					//sorted on time in... so must be here
+					addPerson(record.UUID, record.In);
+					//need to get the names given the UUID and then update table to save order
+					$.post("http://ens-lablogin-backend.appspot.com/getInfoFromUser?User-Domain="+seta_students+"&UUID="+record.UUID, function(data2, status2){
+						var	userInfo=	$.parseJSON(data2);;
+						$('#nameFor'+record.UUID).html(userInfo.Results.First+' '+userInfo.Results.Last);
+						$('#emailFor'+record.UUID).html(userInfo.Results.Email);
+						//add extra info to specific record
+					});
+				});
+			});
+			//Listen for enter in the input box
+			$('#logInput').on('keyup',function(e){
+				bannerID = $(this).val();
+				if(bannerID.length=== 8)
+					$("#logIndicator").find('i').toggleClass('fa-times-circle fa-check-circle');
+				else
+					$("#logIndicator").find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
+
+				if(e.keyCode == 13){
+					// [EDITED] Function used only once, verifying login status will probably be done only once.
+					// Kept name as a self-executing function for historical purposes. Keeping it close to usage will make purpose clearer.
+					var	status=	(function checkLoginStatus(domain, userDomain, uuid)	{
+						// Variables
+						var	promise=	$.post("http://ens-lablogin-backend.appspot.com/checkLogin?Domain="+domain+"&User-Domain="+userDomain+"&UUID="+uuid, function(data, status)	{
+							//console.log(data);
+						});
+						return promise;
+					})(fnl_lab, seta_students, bannerID);
+					
+					// [EDITED] Functions used only once, for visiability purpose switch is left alone.
+					// Function declaration moved above switch usage so purpose of each call can be quickly determined.
+					// There will probably be only one way to register/login for a given domain.
+					function openRegisterMenu(bannerID)	{
+						$("#regmenu #bannerID").val(bannerID);
+						$("#regmenu #firstName").val("");
+						$("#regmenu #lastName").val("");
+						$("#regmenu").modal("show");
+						$('#regmenu').on('shown.bs.modal', function() {
+						  $("#regmenu #firstName").focus();
+						})
+						$('#regmenu').on('hidden.bs.modal', function() {
+						   $('#logInput').focus();
+						})
+						//Maybe that button should fire on click?
+						//submit button will call verifyRegistration();
+					}				
+
+					// [EDITED] Functions used only once, See Above
+					function logStudent()	{
+						// logLabgoer is a toggle
+						var	logout=	logLabgoer(fnl_lab, seta_students, bannerID);	
+						logout.done(function(data)	{
+							var	jdata=	$.parseJSON(data);
+							
+							if(jdata.Results.Status== "User is Logged In"){
+								addPerson(bannerID);
+								// next populate the name and email
+								$('#nameFor'+bannerID).html(jdata.Results.First+' '+jdata.Results.Last);
+								$('#emailFor'+bannerID).html(jdata.Results.Email);
+							}else{
+								$("#outID").html(bannerID);
+								$("#goodBye").modal("show");
+								deletePerson(bannerID);
+							}
+						});
+					}				
+					
+					status.done(function(data)	{
+						var	jdata=	JSON.parse(data);	
+						switch(jdata.Code)	{
+							default:	console.log(data);	break;
+							case 404:	openRegisterMenu(bannerID); break; 
+							case 0: 	logStudent(); break;
+						}
+					});
+					$(this).val("");
+				}
+			});
+			
+			// reporting listener
+			$('#report').on('click', function(args)	{
+
+				//[EDITED]: getRecords only ever used once. Since it's in a complex call it will be moved into the appropriate scope as a definition.
+				function getRecords(domain)	{
+					// Variables
+					var	records=	$.post("http://ens-lablogin-backend.appspot.com/select all from record?Domain="+domain, function(data, status)	{
+						//console.log(data);
+					});
+					
+					return records
+				}
+			
+				getRecords(fnl_lab).done(function(data)	{
+					// Variables
+					var	jdata=	$.parseJSON(data);
+					
+					if(jdata.Status== "Success")
+					{
+						saveCSV(jdata.Results);
+						destroyOldData(fnl_lab);
+						//recoverLogins(jdata.Results); Timestamps get warped. Cannot do this unless backend supports giving specific timestamps.
+						location.reload();
+					}
+				});
+			});
+
 		});
 		
-		saveAs(blob, "report.csv");
-	}
-	
-	function destroyOldData(domain)	{
-		$.post("http://ens-lablogin-backend.appspot.com/drop table record?Domain="+domain, function(data, status)	{
-			//console.log(data);
-		});
-	}
+		// [EDITED]: Adjusted coupling where necessary.
+		// ===============================================================================================
+		// Begin Module: Login / Register
+		// ===============================================================================================
+		// Used in inline HTML listener
+		function verifyRegistration()	{
+			var	bannerID=	$("#bannerID").val();
+			var	firstName=	$("#firstName").val();
+			var	lastName=	$("#lastName").val();
+			var	email=		$("#email").val();
+			var	register;
+					
+			if(bannerID== "" || firstName== "" || lastName== "" || bannerID.length!= 8)
+				return false;
+				
+			var promise = (function registerLabgoer(userDomain,firstName,lastName,email,uuid){
+				//Needs: User-Domain, First, Last, and UUID.
+				var promise = $.post('http://ens-lablogin-backend.appspot.com/addUser?User-Domain='+userDomain+'&First='+firstName+'&Last='+lastName+'&UUID='+uuid+'&Email='+email, function(data, status){ /*console.log(data);*/ });
+				// returns a promise for this ajax call
+				return promise;
+			})(seta_students, firstName, lastName, email, bannerID);
+				
+			promise.done(function registerAndLogin(data){
+				// Variables
+				var	login=	logLabgoer(fnl_lab, seta_students, bannerID);			
+				login.done(function(data2)	{
+					// Variables
+					var	jdata2=	$.parseJSON(data2);
+					
+					$("#logOutput").html(jdata2.Results);
+					$("#regmenu").modal("hide");
+					location.reload();
+				});
+			});
+		}
+		
+		// [EDITED]: Embarassing to admit, but I'm rusty with JQuery, if someone can convert the following line into the apropriate form.
+		document.getElementById("submitRegistration").addEventListener("click",verifyRegistration);
+		
+		// ===============================================================================================
+		// Begin Module: Time
+		// ===============================================================================================
+		function getTime(time, id)	{		
+			time=	new Date(time);
 
+			// [EDITED]: leadZero is only ever used in this scope.
+			function leadZero(num)	{
+				if(num< 10)
+					return "0"+num;		
+				return num;
+			}	
+		
+			if(time.getHours()%12== 0)
+				return ("12:"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
+			else
+				return ((time.getHours()%12)+":"+leadZero(time.getMinutes())+" "+((time.getHours()< 13) ? "am" : "pm"));
+		}
+
+		// TODO: Allen said something about this check being redundant.
+		// It's used in two places, so ask Allen to change the correct usage, it might be unneccessary altogether.
+		function isTimeZero(time)	{
+			return (time.toString()== "0001-01-01T00:00:00Z");
+		}
+		
+		// function parsePastData(data)	{
+		// 	for(var i= 0; i< data.length; i++)
+		// 	{
+		// 		if(isTimeZero(data[i].Out))
+		// 		{
+		// 			addPerson(data[i].UUID, data[i].In);
+		// 		}
+		// 	}
+		// }
+
+		// ===============================================================================================
+		// Begin Module: CSV	
+		// ===============================================================================================
+		function saveCSV(data)	{
+			// Variables
+			var	str=	"ID,Name,In,Out\n";
+			var	blob;
+			
+			for(var i= 0; i< data.length; i++)
+			{
+				if(isTimeZero(data[i].Out))
+					str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+",Still Logged In\n";
+				else
+					str+=	"=\""+data[i].UUID+"\""+",--,"+getTime(data[i].In)+","+getTime(data[i].Out)+"\n";
+			}
+			
+			blob=	new Blob([str], {
+				type:	"text/csv;charset=utf-8"
+			});
+			
+			saveAs(blob, "report.csv");
+		}
+		
+		function destroyOldData(domain)	{
+			$.post("http://ens-lablogin-backend.appspot.com/drop table record?Domain="+domain, function(data, status)	{
+				//console.log(data);
+			});
+		}
+})();
 </script>
 
 </body>
